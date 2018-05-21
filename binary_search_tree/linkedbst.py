@@ -87,16 +87,13 @@ class LinkedBST(AbstractCollection):
     def add(self, item):
         """Adds item to the tree."""
 
-        # Helper function to search for item's position
         def recurse(node):
-            # New item is less, go left until spot is found
             if item < node.data:
                 if node.left == None:
                     node.left = BSTNode(item)
                 else:
                     recurse(node.left)
-            # New item is greater or equal,
-            # go right until spot is found
+
             elif node.right == None:
                 node.right = BSTNode(item)
             else:
@@ -205,13 +202,11 @@ class LinkedBST(AbstractCollection):
         """
         Helper method to recursively find the height of the tree
         """
-        if isinstance(p, BSTNode) and p is not None:
-            p = p.data
-        if self.is_leaf(p):
-            return 0
+        if p is None:
+            return -1
         else:
-            return 1 + max(self._height2(c) for c in (self.find(p).right,
-                                                      self.find(p).left))
+            return 1 + max(self._height2(c) for c in (p.right,
+                                                      p.left))
 
     def isBalanced(self):
         '''
@@ -230,12 +225,43 @@ class LinkedBST(AbstractCollection):
         return [i for i in lst if low <= i <= high]
 
     def rebalance(self):
-        '''
-        Rebalances the tree.
-        '''
         lst = sorted([i for i in self])
-        balance_factor = self.height(self, p=self._root.right) - self.height(self, p=self._root.right)
+        new_tree = []
 
+        def _find_mid(lst):
+            return lst[len(lst) // 2]
+
+        def _split_half(lst):
+            return lst[:len(lst) // 2], lst[len(lst) // 2:]
+
+        new_tree.append(_find_mid(lst))
+        lst.pop(len(lst) // 2)
+
+        def recurse(lst):
+            if len(lst) > 1:
+                left, right = _split_half(lst)
+
+                if left and right:
+                    new_tree.append(left.pop(len(left)//2))
+                    recurse(left)
+                    new_tree.append(right.pop(len(right)//2))
+                    recurse(right)
+
+                elif left:
+                    new_tree.append(left.pop(len(left)//2))
+                    recurse(left)
+
+                elif right:
+                    new_tree.append(right.pop(len(right)//2))
+                    recurse(right)
+
+            elif lst:
+                new_tree.append(lst[0])
+        recurse(lst)
+        tree = LinkedBST()
+        for i in new_tree:
+            tree.add(i)
+        return tree
 
     def successor(self, item):
         """
@@ -263,8 +289,8 @@ class LinkedBST(AbstractCollection):
         else:
             return None
 
-tree = LinkedBST()
 
+tree = LinkedBST()
 tree.add("D")
 tree.add("B")
 tree.add("A")
@@ -274,13 +300,18 @@ tree.add("E")
 tree.add("G")
 tree.add('K')
 tree.add('L')
+tree.add('R')
+tree.add('H')
 # print(tree.find('B').left.data)
 # print(tree.is_leaf('A'))
 print(tree)
 # print(tree.rangeFind('A', 'F'))
-print(tree.isBalanced())
+# print(tree.isBalanced())
 # print(tree.successor('F'))
 # print(tree.predecessor('H'))
-print(tree._root.right.data)
+# print(tree._root.right.right.data)
 # tree.rebalance()
-print(tree.height(tree._root.right))
+# print(tree.height(tree._root.right))
+# print(tree.height(p = tree._root.right))
+# d = tree.rebalance()
+# print(d.isBalanced())
