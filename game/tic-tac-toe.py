@@ -42,10 +42,11 @@ class Board:
         return False
 
     def move(self, sign, position):
-        if not 0 < position[0] < 3 or not 0 < position[1] < 3:
+        if position[0] > 2 or position[1] > 2 or\
+                position[0] < 0 or position[0] < 0:
             print('Wrong coordinates. Try again!')
             return None
-        if self.board[position[0]][position[1]]:
+        if self.board[position[0]][position[1]] is not None:
             print('Position already taken. Try again!')
             return None
         self.board[position[0]][position[1]] = sign
@@ -73,43 +74,71 @@ class Board:
                     res.add((i, j))
         return res
 
+    def is_full(self):
+        for i in range(3):
+            for j in range(3):
+                if self.board[i][j] is None:
+                    return False
+        return True
+
 
 b = Board()
 b.draw()
 
 
-def fill_tree(current_board):
-    tree = Tree(current_board)
-    possible = sample(current_board.possible_moves(), 2)
-    if current_board.last_move[0] == 'X':
-        sign = 'O'
-    else:
-        sign = 'X'
-    b_left = deepcopy(current_board)
-    b_right = deepcopy(current_board)
-    b_left.move(sign, possible[0])
-    b_right.move(sign, possible[1])
-    tree.insert_left(b_left)
-    tree.insert_right(b_right)
-    print(possible)
-
-    def recurse(left=tree.get_left_child(), right=tree.get_right_child()):
-        if len(current_board.possible_moves()) < 2:
-            return tree
-        possible = sample(current_board.possible_moves(), 2)
-        if current_board.last_move[0] == 'X':
-            sign = 'O'
-        else:
-            sign = 'X'
-        b_left = deepcopy(current_board)
-        b_right = deepcopy(current_board)
-        b_left.move(sign, possible[0])
-        b_right.move(sign, possible[1])
-        left.insert_left(b_left)
-        right.insert_right(b_right)
-        return recurse(left=tree.get_left_child(), right=tree.get_right_child())
-
-    return recurse(tree)
+class Player:
+    def __init__(self, sign, board):
+        self.sign = sign
+        self.board = board
 
 
-fill_tree(b)
+class Human(Player):
+    pass
+
+
+class Bot(Player):
+    def fill_tree(self, human):
+        board = deepcopy(self.board)
+        tree = Tree(board)
+
+        def recurse(tree):
+            possible = board.possible_moves()
+            print(possible)
+            if len(possible) > 1:
+                left, right = sample(possible, 2)
+
+                tree.insert_left(deepcopy(board).move(self.sign, left))
+                tree.insert_right(deepcopy(board).move(self.sign, right))
+
+                possible = board.possible_moves()
+                left, right = sample(possible, 2)
+                tree.insert_left(deepcopy(board).move(human.sign, left))
+                tree.insert_right(deepcopy(board).move(human.sign, right))
+
+                return recurse(tree.get_left_child()) + recurse(tree.get_right_child())
+
+            if len(possible) == 1:
+                left = list(possible)[0]
+                tree.insert_left(deepcopy(board).move(self.sign, left))
+                return recurse(tree.get_left_child())
+            else:
+                return tree
+
+        recurse(tree)
+
+
+bot = Bot('X', b)
+h = Human('O', b)
+bot.fill_tree(h)
+
+
+
+def game():
+    b = Board()
+    sign = input('Enter your sign("X" or "O"): ')
+    sign_bot = "O" if sign != "O" else "X"
+
+    player = Player(sign, b)
+    bot = Bot(sign_bot, b)
+
+
